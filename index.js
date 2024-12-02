@@ -1,6 +1,9 @@
 require("dotenv").config();
+
 const express = require("express");
 const knex = require("knex")(require("./knexfile").development);
+const middleware = require("./middlewares/index");
+const logger = require("./utils/logger");
 const { MeiliSearch } = require("meilisearch");
 
 const app = express();
@@ -18,8 +21,21 @@ app.locals.meiliClient = meiliClient;
 const userRoutes = require("./routes/users");
 const productRoutes = require("./routes/products");
 
-app.use("/api/users", userRoutes);
-app.use("/api/products", productRoutes);
+app.use(
+  "/api/users",
+  userRoutes,
+  middleware.printForwardRequestResponse,
+  middleware.recordHit
+);
+
+app.use(
+  "/api/products",
+  productRoutes,
+  middleware.printForwardRequestResponse,
+  middleware.recordHit
+);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  logger.verbose(`wapotek listening at PORT : ${PORT}`);
+});
