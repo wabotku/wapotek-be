@@ -3,10 +3,10 @@ const router = express.Router();
 
 const controller = require("../controllers/v1/index");
 
-router.post("/", controller.productController.read);
+router.post("/", controller.productController.create);
 router.get("/", controller.productController.read);
-router.put("/", controller.productController.read);
-router.delete("/", controller.productController.read);
+router.put("/", controller.productController.update);
+router.delete("/", controller.productController.delete);
 
 
 // router.get("/", async (req, res) => {

@@ -3,7 +3,7 @@ const logger = require("../../../utils/logger");
 
 exports.read = async (req) => {
   let response = {
-    status: httpRes.HTTP_GENERALERROR,
+    status: httpRes.HTTP_INTERNAL_SERVER_ERROR,
     result: [],
   };
 
@@ -27,11 +27,12 @@ exports.read = async (req) => {
     const db = req.app.locals.db;
     let query = db("products")
       .select("*")
+      .orderBy("name")
       .limit(limit)
       .offset(offset);
 
     if(req.body.name){
-      query.whereRaw("similarity(name, ? ) > ?", [req.body.name, 0.2]);
+      query.whereRaw("similarity(name, ? ) > ?", [req.body.name, 0.01]);
     }
 
     let data = await query;
