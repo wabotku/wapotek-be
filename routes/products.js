@@ -3,59 +3,48 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   const meiliClient = req.app.locals.meiliClient;
-  const index = await meiliClient.index("products").search(""); // This returns an Index instance
-  console.log(index);
+  let listProductSearch = await meiliClient
+    .index("products")
+    .search(req.body.name, {
+      limit: req.body.limit ?? 10,
+      offset: req.body.offset ?? 0,
+    });
+  let listUuidProduct = [];
 
-  // const searchResults = await index.search("Product", {
-  //   limit: 10, // Optional: Limit results
-  // });
-  // console.log("Search results:", searchResults);
-
-  // const info = await index.getRawInfo();
-  // console.log("Index info:", info);
+  for (let val of listProductSearch["hits"]) {
+    listUuidProduct.push(val["uuid"]);
+  }
 
   const db = req.app.locals.db;
-  const products = await db("products").select("*");
-  res.json(products);
+  const products = await db("products")
+    .select("*")
+    .whereIn("uuid", listUuidProduct);
+
+  console.log(products);
+  
+  res.json(products ?? {data:'takde'});
 });
 
 router.post("/", async (req, res) => {
-  const db = req.app.locals.db;
-  const meiliClient = req.app.locals.meiliClient;
+  try {
+    const db = req.app.locals.db;
+    const meiliClient = req.app.locals.meiliClient;
 
-  const { name, description, price } = req.body;
-  //   const [id] = await db('products').insert({ name, description, price });
-  // const [product] = await db("products")
-  //   .insert({ name, description, price })
-  //   .returning("*");
+    const { name, description, price } = req.body;
+    const [data] = await db("products")
+      .insert({ name, description, price })
+      .returning("*");
+    await meiliClient
+      .index("products")
+      .addDocuments([
+        { uuid: data.uuid, name: data.name, description: data.description },
+      ]);
 
-  const id = 1000; // Ambil ID produk yang baru dibuat
-
-  //   const indexExists = await meiliClient
-  //     .index("products")
-  //     .getRawInfo()
-  //     .catch(() => null);
-
-  if (!indexExists) {
-    await meiliClient.createIndex("products", { primaryKey: "id" });
+    res.status(201).json({ data });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json(error);
   }
-
-  await meiliClient
-    .index("products")
-    .addDocuments([{ id, name, description, price }]);
-
-  //   try {
-  //     await meiliClient
-  //       .index("products")
-  //       .addDocuments([{ id, name, description, price }]);
-  //   } catch (error) {
-  //     await meiliClient.createIndex("products", { primaryKey: "id" });
-  //     //  await meiliClient
-  //     //    .index("products")
-  //     //    .addDocuments([{ id, name, description, price }]);
-  //   }
-
-  res.status(201).json({ id });
 });
 
 router.put("/:id", async (req, res) => {
