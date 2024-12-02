@@ -1,14 +1,15 @@
+const httpRes = require("../../../utils/httpRes");
 const logger = require("../../../utils/logger");
 
-exports.read = async (req, res) => {
+exports.read = async (req) => {
   let response = {
-    status: false,
+    status: httpRes.HTTP_GENERALERROR,
     result: [],
   };
-  
+
   try {
     const meiliClient = req.app.locals.meiliClient;
-    
+
     let listProductSearch = await meiliClient
       .index("products")
       .search(req.body.name, {
@@ -27,11 +28,11 @@ exports.read = async (req, res) => {
       .whereIn("uuid", listUuidProduct);
 
     response = {
-      status: true,
+      status: httpRes.HTTP_OK,
       result: products,
     };
   } catch (error) {
-   logger.error(error);
+    logger.error(error.message);
   }
 
   return response;

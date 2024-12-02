@@ -1,5 +1,6 @@
 const httpRes = require("../../../utils/httpRes");
-const model = require("../../../models/v1/index")
+const model = require("../../../models/v1/index");
+const logger = require("../../../utils/logger");
 
 exports.read = async (req, res, next) => {
   let response = {
@@ -9,9 +10,9 @@ exports.read = async (req, res, next) => {
   };
 
   try {
-    let result = await model.productModel.read(req, res);
+    let result = await model.productModel.read(req);
 
-    if (result["status"]) {
+    if (result["status"] == httpRes.HTTP_OK) {
       response = {
         rc: httpRes.HTTP_OK,
         rd: httpRes[httpRes.HTTP_OK],
@@ -19,11 +20,14 @@ exports.read = async (req, res, next) => {
       };
     }
 
-    res.locals.status = response["rc"];
+    res.locals.status = result["status"];
     res.locals.response = JSON.stringify(response);
   } catch (error) {
     res.locals.status = response["rc"];
-    res.locals.response = JSON.stringify(error);
+    res.locals.response = JSON.stringify(response);
+    response["data"] = error.message;
+
+    logger.error(response);
   }
 
   next();
